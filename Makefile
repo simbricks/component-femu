@@ -68,3 +68,4 @@ all: conda-packages
 ## --- Housekeeping ----------------------------------------------------------
 
 clean:
+	rm -rf $(FEMU_PY_SIM)/dist
