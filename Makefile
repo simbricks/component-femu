@@ -21,8 +21,21 @@
 # SOFTWARE.
 
 # Compilers and python interpreter (overridable by conda / the environment).
+CC                ?= cc
 CXX               ?= c++
 PYTHON            ?= python
+
+# Where "make femu-install" places the femu binary. Inside a conda build this is
+# the build prefix; for a local dev build override it, e.g. PREFIX=$(pwd)/out.
+PREFIX            ?= $(CURDIR)/out
+
+# Location of the SimBricks headers/libraries the femu build links against.
+# Headers (included as <simbricks/...>) live under $(PREFIX)/include; the
+# libnicif/libpcie/libbase/libparser libraries live under $(PREFIX)/lib/simbricks.
+# These come from the simbricks-lib package; override for a local dev build that
+# installs simbricks-lib elsewhere.
+SIMBRICKS_INC_DIR ?= $(PREFIX)/include
+SIMBRICKS_LIB_DIR ?= $(PREFIX)/lib/simbricks
 
 # Python packages
 FEMU_PY_SIM       := femu_sim_py
@@ -37,7 +50,27 @@ SIMB_CONDA_CHANNEL:= -c https://conda.simbricks.io/latest
 BASE_BUILD_CMD    := conda build $(SIMB_CONDA_CHANNEL) -m conda-recipes/conda_build_config.yaml $(OUTPUT_FLAG)
 
 .PHONY: all conda-packages pypi-build pypi-publish clean femu-python-develop \
-	femu-sim-py-conda
+	femu-sim-py-conda femu-build femu-install femu-bin-conda
+
+## --- femu simulator (C sources in femu/) -----------------------------------
+
+# Build the femu-simbricks binary. The stamp file tracks a completed build so
+# repeated invocations are cheap. The leading '+' forwards the make jobserver to
+# the nested femu build. EXTRA_CPPFLAGS/EXTRA_LDFLAGS point it at the SimBricks
+# headers and libraries.
+femu/ready: femu
+	+$(MAKE) -C femu \
+		CC="$(CC)" \
+		EXTRA_CPPFLAGS="-I$(SIMBRICKS_INC_DIR)" \
+		EXTRA_LDFLAGS="-L$(SIMBRICKS_LIB_DIR)"
+	touch $@
+
+# Build femu (clean named alias for the stamp target).
+femu-build: femu/ready
+
+# Install the built femu binary into $(PREFIX)/bin.
+femu-install: femu/ready
+	install -D femu/femu-simbricks $(PREFIX)/bin/femu-simbricks
 
 ## --- Python packages -------------------------------------------------------
 
@@ -50,7 +83,12 @@ femu-python-develop:
 femu-sim-py-conda:
 	$(BASE_BUILD_CMD) conda-recipes/simbricks-femu-sim-py
 
-conda-packages: femu-sim-py-conda
+# Build the compiled femu conda package. It depends at runtime on the python
+# package, so build that first and let conda resolve it from the local channel.
+femu-bin-conda: femu-sim-py-conda
+	$(BASE_BUILD_CMD) conda-recipes/simbricks-femu-sim-bin
+
+conda-packages: femu-sim-py-conda femu-bin-conda
 
 ## --- PyPI packages ---------------------------------------------------------
 
@@ -68,4 +106,6 @@ all: conda-packages
 ## --- Housekeeping ----------------------------------------------------------
 
 clean:
+	rm -f femu/ready
+	-$(MAKE) -C femu clean
 	rm -rf $(FEMU_PY_SIM)/dist

@@ -1,0 +1,22 @@
+Replace reallocarray() with realloc() in femu's QEMU compat layer.
+
+reallocarray() was only added to glibc in 2.26, but the simbricks-femu-sim-bin
+recipe deliberately targets an older sysroot (glibc 2.17) for broad,
+arch-independent compatibility. There the symbol is absent and the femu link
+fails with "undefined reference to reallocarray". The scatter-gather list grows
+one entry at a time, so the array size can never overflow size_t; a plain
+realloc() with the multiplication done explicitly is equivalent in practice.
+
+diff --git a/femu/qemu-compat/wrapper-qemu.c b/femu/qemu-compat/wrapper-qemu.c
+--- a/femu/qemu-compat/wrapper-qemu.c
++++ b/femu/qemu-compat/wrapper-qemu.c
+@@ -579,7 +579,8 @@
+
+ void qemu_sglist_add(QEMUSGList *qsg, dma_addr_t base, dma_addr_t len)
+ {
+-    void *new_sg = reallocarray(qsg->sg, qsg->nsg + 1, sizeof(*qsg->sg));
++    void *new_sg = realloc(qsg->sg,
++                           (size_t)(qsg->nsg + 1) * sizeof(*qsg->sg));
+     if (!new_sg)
+         abort();
+
