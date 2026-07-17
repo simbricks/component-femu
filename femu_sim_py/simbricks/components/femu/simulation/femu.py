@@ -35,7 +35,7 @@ class FEMUSim(pcidev.PCIDevSim):
 
     def __init__(self, simulation: sim_base.Simulation) -> None:
         super().__init__(
-            simulation=simulation, executable="sims/external/femu/femu-simbricks", name=""
+            simulation=simulation, executable="femu-simbricks", name=""
         )
         self.name = f"FEMUSim-{self._id}"
 
