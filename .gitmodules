@@ -1,0 +1,3 @@
+[submodule "femu"]
+	path = femu
+	url = https://github.com/simbricks/femu.git
