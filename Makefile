@@ -35,7 +35,7 @@ PREFIX            ?= $(CURDIR)/out
 # These come from the simbricks-lib package; override for a local dev build that
 # installs simbricks-lib elsewhere.
 SIMBRICKS_INC_DIR ?= $(PREFIX)/include
-SIMBRICKS_LIB_DIR ?= $(PREFIX)/lib/simbricks
+SIMBRICKS_LIB_DIR ?= $(PREFIX)/lib
 
 # Python packages
 FEMU_PY_SIM       := femu_sim_py
