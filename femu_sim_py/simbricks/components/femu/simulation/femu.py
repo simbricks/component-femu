@@ -48,7 +48,7 @@ class FEMUSim(pcidev.PCIDevSim):
         super().add(ssd)
 
     def run_cmd(self, inst: inst_base.Instantiation) -> str:
-        cmd = f"{inst.env.repo_base(relative_path=self._executable)} "
+        cmd = f"{self._executable} "
 
         nvme_devices = self.filter_components_by_type(ty=sys_pcie.NVMeSSD)
         assert len(nvme_devices) == 1
