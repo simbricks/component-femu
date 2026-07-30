@@ -44,7 +44,7 @@ requirements:
     - {{ stdlib('c') }}
     - make
   host:
-    - simbricks-lib >=0.4.2
+    - simbricks-lib >=0.5.0
   run:
     # Pull in the SimBricks femu python integration so installing the simulator
     # binary also provides its orchestration glue.
